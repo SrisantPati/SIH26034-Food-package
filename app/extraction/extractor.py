@@ -1,5 +1,5 @@
 import re
-
+from app.extraction.compliance_fields import extract_compliance_fields
 
 # ================================================================
 # SETTINGS
@@ -1555,5 +1555,9 @@ def extract_fields(ocr_results):
                 ocr_results
             )
     }
+
+    compliance_fields = extract_compliance_fields(
+    ocr_results
+)
 
     return product
