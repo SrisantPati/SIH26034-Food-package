@@ -1,3 +1,4 @@
+import time
 from app.ocr.ocr_service import extract_text
 from app.extraction.extractor import extract_fields
 
@@ -79,9 +80,14 @@ image_path = r"C:\Users\Srisant\product_compliance\app\uploads\71ur3Tat2VL.jpg"
 
 print("Starting OCR...")
 
+start_time = time.perf_counter()
+
 ocr_results = extract_text(image_path)
-debug_compliance_lines(ocr_results)
+
+ocr_time = time.perf_counter() - start_time
+
 print("OCR FINISHED")
+print(f"OCR TIME: {ocr_time:.2f} seconds")
 
 # Print raw OCR results
 print("\n===== RAW OCR DATA =====")
