@@ -1,6 +1,7 @@
 import time
 from app.ocr.ocr_service import extract_text
 from app.extraction.extractor import extract_fields
+from app.compliance.compliance_engine import run_compliance_checks
 
 def debug_compliance_lines(ocr_results):
 
@@ -74,10 +75,11 @@ def debug_compliance_lines(ocr_results):
                 )
 
             print("-" * 70)
+
+
 print("TEST STARTED")
 
-image_path = r"C:\Users\Srisant\product_compliance\app\uploads\71ur3Tat2VL.jpg"
-
+image_path = r"C:\Users\Srisant\product_compliance\app\uploads\lays1.jpg"
 print("Starting OCR...")
 
 start_time = time.perf_counter()
@@ -99,6 +101,10 @@ print("\nStarting extraction...")
 
 product = extract_fields(ocr_results)
 
+compliance = run_compliance_checks(
+    product
+)
+
 print("EXTRACTION FINISHED")
 
 print("\n===== EXTRACTED PRODUCT DATA =====")
@@ -107,3 +113,20 @@ for key, value in product.items():
     print(f"{key}: {value}")
 
 print("TEST FINISHED")
+
+print("\n===== COMPLIANCE RESULTS =====")
+
+for check in compliance["checks"]:
+    print(
+        f'{check["field"]}: '
+        f'{check["status"]} - '
+        f'{check["reason"]}'
+    )
+
+
+print("\n===== COMPLIANCE SUMMARY =====")
+
+for key, value in compliance["summary"].items():
+    print(
+        f"{key}: {value}"
+    )

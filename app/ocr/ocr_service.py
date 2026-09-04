@@ -484,6 +484,210 @@ def create_tiles(image):
 
     return tiles
 
+def enhance_declaration_crop(
+    image,
+    scale=3.0
+):
+    """
+    Enhancement specifically for faint variable
+    information such as batch number, dates,
+    price and net quantity.
+    """
+
+    # Convert to grayscale
+    gray = cv2.cvtColor(
+        image,
+        cv2.COLOR_BGR2GRAY
+    )
+
+    # Upscale
+    gray = cv2.resize(
+        gray,
+        None,
+        fx=scale,
+        fy=scale,
+        interpolation=cv2.INTER_CUBIC
+    )
+
+    # Improve local contrast
+    clahe = cv2.createCLAHE(
+        clipLimit=3.0,
+        tileGridSize=(8, 8)
+    )
+
+    gray = clahe.apply(gray)
+
+    # Sharpen faint printed characters
+    blurred = cv2.GaussianBlur(
+        gray,
+        (0, 0),
+        1.0
+    )
+
+    sharpened = cv2.addWeighted(
+        gray,
+        2.0,
+        blurred,
+        -1.0,
+        0
+    )
+
+    # PaddleOCR works better consistently
+    # with a 3-channel image
+    processed = cv2.cvtColor(
+        sharpened,
+        cv2.COLOR_GRAY2BGR
+    )
+
+    return processed
+
+def run_targeted_declaration_ocr(
+    image,
+    original_results
+):
+    """
+    Run a second OCR pass only around important declaration
+    labels whose values may be too small for full-image OCR.
+
+    Targets:
+    - UNIT SALE PRICE
+    - B.NO / BATCH
+    - MFD / USE BY
+    - NET QTY
+    """
+
+    target_patterns = [
+    r"^\s*UNIT\s*SALE\s*PRICE\b",
+
+    r"^\s*PER\s*PACK\s*/?\s*B\.?\s*NO\.?",
+
+    r"^\s*MFD\s*&?\s*USE\s*BY\b",
+
+    r"^\s*NET\s*(?:QTY|QUANTITY|WT|WEIGHT)\b",
+
+    # Generic batch/lot label ONLY if it starts the line
+    r"^\s*(?:BATCH(?:\s*NO\.?)?|B\.?\s*NO\.?|LOT(?:\s*NO\.?)?)"
+    r"\s*[:\-]?"
+    ]
+
+    target_items = []
+
+    for item in original_results:
+
+        text = item["text"]
+
+        if any(
+            re.search(
+                pattern,
+                text,
+                re.IGNORECASE
+            )
+            for pattern in target_patterns
+        ):
+            target_items.append(item)
+
+    if not target_items:
+        return []
+
+    # ------------------------------------------------
+    # Find one region containing all target labels
+    # ------------------------------------------------
+
+    min_x = min(
+        item["box"][0]
+        for item in target_items
+    )
+
+    min_y = min(
+        item["box"][1]
+        for item in target_items
+    )
+
+    max_x = max(
+        item["box"][2]
+        for item in target_items
+    )
+
+    max_y = max(
+        item["box"][3]
+        for item in target_items
+    )
+
+    image_height, image_width = image.shape[:2]
+
+    # Extra space around labels because the actual
+    # printed values may be beside or below them.
+    padding_left = 30
+    padding_right = 260
+    padding_top = 25
+    padding_bottom = 50
+
+
+    x1 = max(
+        0,
+        min_x - padding_left
+    )
+
+    y1 = max(
+        0,
+        min_y - padding_top
+    )
+
+    x2 = min(
+        image_width,
+        max_x + padding_right
+    )
+
+    y2 = min(
+        image_height,
+        max_y + padding_bottom
+    )
+
+    crop = image[
+    y1:y2,
+    x1:x2
+    ]
+
+    cv2.imwrite(
+        "app/uploads/declaration_crop_raw.jpg",
+        crop
+    )
+
+    if crop.size == 0:
+        return []
+
+    
+    # ------------------------------------------------
+    # Enlarge only this small region
+    # ------------------------------------------------
+    scale = 3.0
+
+    enhanced_crop = enhance_declaration_crop(
+        crop,
+        scale=scale
+    )
+    cv2.imwrite(
+    "app/uploads/declaration_crop_debug.jpg",
+    enhanced_crop
+    )
+
+    print(
+        "Targeted OCR: declaration panel..."
+    )
+
+    results = run_ocr_pass(
+        image=enhanced_crop,
+        source="declaration_crop",
+        scale=scale,
+        x_offset=x1,
+        y_offset=y1
+    )
+
+    print(
+        f"Targeted OCR: {len(results)} detections"
+    )
+
+    return results
 
 # ================================================================
 # MAIN PUBLIC FUNCTION
@@ -507,9 +711,30 @@ def extract_text(image_path: str):
     )
 
     print(
-        f"Pass 1: {len(original_results)} detections"
+    f"Pass 1: {len(original_results)} detections"
     )
 
-    # For now, return only the original OCR result.
-    # This keeps testing fast.
-    return original_results
+    # ------------------------------------------------
+    # TARGETED OCR FOR SMALL DECLARATION VALUES
+    # ------------------------------------------------
+
+    targeted_results = run_targeted_declaration_ocr(
+        image,
+        original_results
+    )
+
+    # Combine full-image + targeted detections
+    all_results = (
+        original_results
+        + targeted_results
+    )
+
+    merged_results = merge_results(
+        all_results
+    )
+
+    print(
+        f"Final OCR detections: {len(merged_results)}"
+    )
+
+    return merged_results

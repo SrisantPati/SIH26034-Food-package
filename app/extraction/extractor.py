@@ -1,3 +1,4 @@
+from email.mime import text
 import re
 from app.extraction.compliance_fields import extract_compliance_fields
 
@@ -99,47 +100,27 @@ def split_ingredients(text):
 # ================================================================
 # PRODUCT NAME
 # ================================================================
-
 def extract_product_name(ocr_results):
-
     """
-    Generic product-name/brand heuristic.
+    Extract brand name only when there is strong textual evidence.
 
-    Looks for large, high-confidence, short text rather than
-    hardcoding Parle-G, Lay's, Head & Shoulders, etc.
+    Do NOT guess a brand from arbitrary large/short OCR text.
     """
 
-    excluded_words = [
-        "ingredient",
-        "nutrition",
-        "manufacturer",
-        "manufactured",
-        "marketed",
-        "consumer",
-        "address",
-        "private",
-        "limited",
-        "pvt",
-        "ltd",
-        "net qty",
-        "net weight",
-        "net volume",
-        "mrp",
-        "batch",
-        "use before",
-        "best before",
-        "directions",
-        "caution",
-        "allergen",
-        "energy",
-        "protein",
-        "carbohydrate",
-        "sodium",
-        "shampoo - surfactant",
-        "proprietary food"
-    ]
+    # ------------------------------------------
+    # 1. Explicit trademark phrases
+    #
+    # Example:
+    # Lay's is the Registered Trade Mark...
+    # ------------------------------------------
 
-    candidates = []
+    trademark_pattern = re.compile(
+        r"^\s*([A-Za-z0-9&'’.\- ]{2,40}?)"
+        r"\s+is\s+(?:the\s+)?"
+        r"(?:registered\s+)?"
+        r"(?:trade\s*mark|trademark)\b",
+        re.IGNORECASE
+    )
 
     for item in ocr_results:
 
@@ -147,73 +128,98 @@ def extract_product_name(ocr_results):
             item["text"]
         )
 
-        confidence = float(
-            item["confidence"]
-        )
-
-        box = item["box"]
-
-        if confidence < 0.75:
-            continue
-
-        if len(text) < 3 or len(text) > 45:
-            continue
-
-        lowered = text.lower()
-
-        if any(
-            word in lowered
-            for word in excluded_words
-        ):
-            continue
-
-        # Needs actual alphabetic characters
-        if not re.search(
-            r"[A-Za-z]",
+        match = trademark_pattern.search(
             text
-        ):
-            continue
-
-        height = max(
-            1,
-            box[3] - box[1]
         )
 
-        width = max(
-            1,
-            box[2] - box[0]
-        )
+        if match:
 
-        # Large text is usually product/brand text.
-        score = (
-            height * 3
-            + min(width, 500) * 0.05
-            + confidence * 50
-        )
-
-        candidates.append(
-            (
-                score,
-                item
+            brand = clean_spaces(
+                match.group(1)
             )
+
+            brand = brand.strip(
+                " .,:;-"
+            )
+
+            if len(brand) >= 2:
+
+                return make_field(
+                    brand,
+                    item["confidence"]
+                )
+
+    # ------------------------------------------
+    # No reliable textual evidence
+    # ------------------------------------------
+
+    return make_field()
+
+def extract_food_name(ocr_results):
+    """
+    Extract the actual name/type of food.
+
+    Examples:
+    PROPRIETARY FOOD - POTATO CHIPS
+    NAME OF FOOD: ...
+    PRODUCT: ...
+    """
+
+    patterns = [
+        r"PROPRIETARY\s*FOOD\s*[-:]\s*([A-Z][A-Z\s\-&]+)",
+        r"NAME\s+OF\s+(?:THE\s+)?FOOD\s*[:\-]\s*(.+)",
+        r"FOOD\s+NAME\s*[:\-]\s*(.+)",
+        r"PRODUCT\s+NAME\s*[:\-]\s*(.+)",
+    ]
+
+    for item in ocr_results:
+
+        text = clean_spaces(
+            item["text"]
         )
 
-    if not candidates:
-        return make_field()
+        for pattern in patterns:
 
-    candidates.sort(
-        key=lambda x: x[0],
-        reverse=True
-    )
+            match = re.search(
+                pattern,
+                text,
+                re.IGNORECASE
+            )
 
-    selected = candidates[0][1]
+            if not match:
+                continue
 
-    return make_field(
-        clean_spaces(
-            selected["text"]
-        ),
-        selected["confidence"]
-    )
+            value = clean_spaces(
+                match.group(1)
+            )
+
+            # Remove trailing regulatory category numbers:
+            #
+            # POTATO CHIPS (15.1)
+            #
+            # becomes:
+            #
+            # POTATO CHIPS
+
+            value = re.sub(
+                r"\s*\(\s*\d+(?:\.\d+)*\s*\)\s*$",
+                "",
+                value
+            )
+
+            value = value.strip(
+                " .,:;-"
+            )
+
+            if len(value) < 3:
+                continue
+
+            return make_field(
+                value,
+                item["confidence"]
+            )
+
+    return make_field()
 
 
 # ================================================================
@@ -679,68 +685,46 @@ def extract_company_roles(ocr_results):
 # ================================================================
 
 def extract_fssai_numbers(ocr_results):
+    """
+    Extract 14-digit FSSAI licence numbers.
+
+    We intentionally do not require the OCR text
+    around the number to correctly read "Lic. No."
+    because OCR may distort it as Uic.No, Lc.No, etc.
+    """
 
     results = []
-
     seen = set()
 
-    # OCR can misread:
-    #
-    # Lic.No.
-    # Lc.No.
-    # Uc.No.
-    #
-    # Require the licence-style marker AND a 14-digit number.
-
-    marker_pattern = re.compile(
-        r"(?:"
-        r"LIC|"
-        r"LC|"
-        r"UC"
-        r")\.?\s*NO\.?",
-        re.IGNORECASE
+    # FSSAI licence numbers are 14 digits
+    number_pattern = re.compile(
+    r"(?<!\d)([12]\d{13})(?!\d)"
     )
 
     for item in ocr_results:
 
-        text = clean_spaces(
-            item["text"]
+        text = item["text"]
+        confidence = float(
+            item.get("confidence", 0)
         )
 
-        if not marker_pattern.search(text):
-            continue
+        matches = number_pattern.findall(text)
 
-        numbers = re.findall(
-            r"(?<!\d)(\d{14})(?!\d)",
-            text
-        )
-
-        for number in numbers:
+        for number in matches:
 
             if number in seen:
                 continue
 
             seen.add(number)
 
-            confidence = float(
-                item["confidence"]
+            results.append(
+                make_field(
+                    number,
+                    confidence
+                )
             )
 
-            results.append({
-                "value": number,
-                "confidence": round(
-                    confidence,
-                    3
-                ),
-                "status": (
-                    "DETECTED"
-                    if confidence >= HIGH_CONFIDENCE
-                    else "UNCERTAIN"
-                )
-            })
-
     return results
-
 
 # ================================================================
 # INGREDIENT BLOCK
@@ -1454,6 +1438,26 @@ def extract_nutrition(ocr_results):
                 else "UNCERTAIN"
             )
         }
+        default_units = {
+        "energy": "kcal",
+        "protein": "g",
+        "carbohydrate": "g",
+        "total_sugars": "g",
+        "added_sugars": "g",
+        "total_fat": "g",
+        "saturated_fat": "g",
+        "trans_fat": "g",
+        "sodium": "mg",
+    }
+
+    for field, data in nutrition.items():
+
+        if data.get("value") is None:
+            continue
+
+        if data.get("unit") is None:
+            data["unit"] = default_units.get(field)
+
 
     return nutrition
 
@@ -1480,84 +1484,89 @@ def extract_fields(ocr_results):
             )
 
             break
+    brand_name = extract_product_name(
+        ocr_results
+    )
+
+    food_name = extract_food_name(
+        ocr_results
+    )
 
     product = {
 
-        "product_name":
-            extract_product_name(
-                ocr_results
-            ),
+    "brand_name":
+        brand_name,
 
-        "net_weight":
-            extract_net_quantity(
-                ocr_results
-            ),
+    "food_name":
+        food_name,
 
-        "manufacturer":
-            manufacturer,
+    "net_weight":
+        extract_net_quantity(
+            ocr_results
+        ),
 
-        "manufacturer_candidates":
-            extract_company_candidates(
-                ocr_results
-            ),
+    "manufacturer":
+        manufacturer,
 
-        "company_roles":
-            company_roles,
+    "manufacturer_candidates":
+        extract_company_candidates(
+            ocr_results
+        ),
 
-        "fssai_numbers":
-            extract_fssai_numbers(
-                ocr_results
-            ),
+    "company_roles":
+        company_roles,
 
-        "ingredients":
-            extract_ingredients(
-                ocr_results
-            ),
+    "fssai_numbers":
+        extract_fssai_numbers(
+            ocr_results
+        ),
 
-        "best_before":
-            extract_best_before(
-                ocr_results
-            ),
+    "ingredients":
+        extract_ingredients(
+            ocr_results
+        ),
 
-        "mrp":
-            extract_mrp(
-                ocr_results
-            ),
+    "best_before":
+        extract_best_before(
+            ocr_results
+        ),
 
-        "manufacturing_date":
-            extract_date_field(
-                ocr_results,
-                [
-                    r"MFG\.?\s*DATE",
-                    r"MFD\.?\s*DATE",
-                    r"MANUFACTURING\s*DATE",
-                    r"MANUFACTURED\s*ON"
-                ]
-            ),
+    "mrp":
+        extract_mrp(
+            ocr_results
+        ),
 
-        "packing_date":
-            extract_date_field(
-                ocr_results,
-                [
-                    r"PACKING\s*DATE",
-                    r"PACKED\s*ON",
-                    r"PKD\.?\s*DATE"
-                ]
-            ),
+    "manufacturing_date":
+        extract_date_field(
+            ocr_results,
+            [
+                r"MFG\.?\s*DATE",
+                r"MFD\.?\s*DATE",
+                r"MANUFACTURING\s*DATE",
+                r"MANUFACTURED\s*ON"
+            ]
+        ),
 
-        "consumer_care":
-            extract_consumer_care(
-                ocr_results
-            ),
+    "packing_date":
+        extract_date_field(
+            ocr_results,
+            [
+                r"PACKING\s*DATE",
+                r"PACKED\s*ON",
+                r"PKD\.?\s*DATE"
+            ]
+        ),
 
-        "nutrition":
-            extract_nutrition(
-                ocr_results
-            )
+    "consumer_care":
+        extract_consumer_care(
+            ocr_results
+        ),
+
+    "nutrition":
+        extract_nutrition(
+            ocr_results
+        )
     }
 
-    compliance_fields = extract_compliance_fields(
-    ocr_results
-)
 
     return product
