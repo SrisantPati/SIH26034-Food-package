@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        PackCheck | Product Compliance Scanner
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="/static/style.css"
+    >
+</head>
+
+
+<body>
+
+<!-- =========================
+     NAVBAR
+========================= -->
+
+<nav class="navbar">
+
+    <div class="nav-container">
+
+        <div class="brand">
+
+            <div class="brand-icon">
+                ✓
+            </div>
+
+            <div>
+                <div class="brand-name">
+                    PackCheck
+                </div>
+
+                <div class="brand-tagline">
+                    Smart Compliance Intelligence
+                </div>
+            </div>
+
+        </div>
+
+
+        <div class="nav-right">
+
+            <div class="system-status">
+                <span class="status-dot"></span>
+                System Online
+            </div>
+
+            <div class="rule-badge">
+                Legal Metrology
+            </div>
+
+        </div>
+
+    </div>
+
+</nav>
+
+
+
+<!-- =========================
+     HERO
+========================= -->
+
+<header class="hero">
+
+    <div class="hero-content">
+
+        <div class="hero-badge">
+            AUTOMATED PACKAGE COMPLIANCE ANALYSIS
+        </div>
+
+        <h1>
+            Packaged Commodity
+            <span>Compliance Scanner</span>
+        </h1>
+
+        <p>
+            Upload a product label and automatically
+            extract mandatory declarations, analyze
+            compliance and identify fields requiring
+            further verification.
+        </p>
+
+        <div class="hero-features">
+
+            <div class="feature-pill">
+                OCR Extraction
+            </div>
+
+            <div class="feature-pill">
+                Compliance Rules
+            </div>
+
+            <div class="feature-pill">
+                FSSAI Detection
+            </div>
+
+            <div class="feature-pill">
+                Smart Validation
+            </div>
+
+        </div>
+
+    </div>
+
+</header>
+
+
+
+<!-- =========================
+     MAIN
+========================= -->
+
+<main class="main-container">
+
+
+    <!-- =====================
+         UPLOAD
+    ====================== -->
+
+    <section
+        id="scannerSection"
+        class="scanner-card"
+    >
+
+        <div class="scanner-header">
+
+            <div>
+
+                <div class="section-label">
+                    PRODUCT SCANNER
+                </div>
+
+                <h2>
+                    Analyze Product Label
+                </h2>
+
+                <p>
+                    Upload a clear image showing the
+                    product declarations.
+                </p>
+
+            </div>
+
+
+            <div class="scan-number">
+                01
+            </div>
+
+        </div>
+
+
+        <div class="scanner-layout">
+
+
+            <!-- UPLOAD SIDE -->
+
+            <div class="upload-side">
+
+                <label
+                    for="imageInput"
+                    class="drop-zone"
+                    id="dropZone"
+                >
+
+                    <input
+                        type="file"
+                        id="imageInput"
+                        accept="image/png,image/jpeg,image/jpg,image/webp"
+                        hidden
+                    >
+
+
+                    <div class="upload-symbol">
+                        ↑
+                    </div>
+
+
+                    <h3>
+                        Upload Product Image
+                    </h3>
+
+
+                    <p>
+                        Drag & drop or click to browse
+                    </p>
+
+
+                    <span class="file-support">
+                        JPG · JPEG · PNG · WEBP
+                    </span>
+
+                </label>
+
+
+                <div class="scan-tips">
+
+                    <div class="tip-icon">
+                        i
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            For best OCR accuracy
+                        </strong>
+
+                        <p>
+                            Use a clear, well-lit image
+                            with declarations visible
+                            and minimal glare.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- PREVIEW SIDE -->
+
+            <div class="preview-side">
+
+                <div
+                    id="emptyPreview"
+                    class="empty-preview"
+                >
+
+                    <div class="preview-placeholder">
+                        ◫
+                    </div>
+
+                    <p>
+                        Product preview will appear here
+                    </p>
+
+                </div>
+
+
+                <div
+                    id="previewContainer"
+                    class="image-preview-container hidden"
+                >
+
+                    <img
+                        id="imagePreview"
+                        alt="Selected product"
+                    >
+
+
+                    <div class="preview-overlay">
+
+                        <span>
+                            Ready for analysis
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="scan-actions">
+
+            <div
+                id="selectedFileName"
+                class="selected-file"
+            >
+                No image selected
+            </div>
+
+
+            <button
+                id="analyzeButton"
+                class="primary-button"
+                disabled
+            >
+
+                <span>
+                    Analyze Product
+                </span>
+
+                <span class="button-arrow">
+                    →
+                </span>
+
+            </button>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =====================
+         LOADING
+    ====================== -->
+
+    <section
+        id="loadingSection"
+        class="analysis-loader hidden"
+    >
+
+        <div class="loader-animation">
+
+            <div class="scanner-line"></div>
+
+            <div class="loader-ring">
+
+                <div class="loader-core">
+                    OCR
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="loading-content">
+
+            <div class="section-label">
+                ANALYSIS IN PROGRESS
+            </div>
+
+            <h2 id="loadingTitle">
+                Reading product label...
+            </h2>
+
+            <p id="loadingMessage">
+                PaddleOCR is extracting declarations
+                from the uploaded package.
+        <div class="progress-section">
+
+    <div class="progress-header">
+        <span>Estimated progress</span>
+
+        <strong id="progressPercent">
+            0%
+        </strong>
+    </div>
+
+    <div class="progress-track">
+        <div
+            id="progressBar"
+            class="progress-bar"
+        ></div>
+    </div>
+
+</div>
+                
+            </p>
+
+
+            <div class="analysis-steps">
+
+                <div class="analysis-step active">
+                    <span>1</span>
+                    OCR
+                </div>
+
+                <div class="step-line"></div>
+
+                <div class="analysis-step">
+                    <span>2</span>
+                    Extract
+                </div>
+
+                <div class="step-line"></div>
+
+                <div class="analysis-step">
+                    <span>3</span>
+                    Validate
+                </div>
+
+                <div class="step-line"></div>
+
+                <div class="analysis-step">
+                    <span>4</span>
+                    Report
+                </div>
+
+            </div>
+
+
+            <div class="elapsed-time">
+                Analysis time:
+                <strong id="elapsedTime">
+                    0s
+                </strong>
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- =====================
+         RESULTS
+    ====================== -->
+
+    <section
+        id="resultsSection"
+        class="results-section hidden"
+    >
+
+
+        <!-- RESULT HEADER -->
+
+        <div class="results-heading">
+
+            <div>
+
+                <div class="section-label">
+                    ANALYSIS COMPLETE
+                </div>
+
+                <h2>
+                    Product Compliance Report
+                </h2>
+
+                <p>
+                    Automated assessment based on
+                    declarations detected from the image.
+                </p>
+
+            </div>
+
+
+            <button
+                id="newScanButton"
+                class="secondary-button"
+            >
+                + New Scan
+            </button>
+
+        </div>
+
+
+
+        <!-- OVERALL RESULT -->
+
+        <div class="report-overview">
+
+            <div
+                id="overallStatusCard"
+                class="overall-status-card"
+            >
+
+                <div class="overall-icon">
+                    ?
+                </div>
+
+
+                <div>
+
+                    <div class="overall-label">
+                        OVERALL ASSESSMENT
+                    </div>
+
+                    <h2 id="overallStatus">
+                        Needs Review
+                    </h2>
+
+                    <p id="overallDescription">
+                        Some declarations could not
+                        be automatically verified.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- PRODUCT IMAGE -->
+
+            <div class="report-product-image">
+
+                <img
+                    id="resultProductImage"
+                    alt="Analyzed product"
+                >
+
+            </div>
+
+        </div>
+
+
+
+        <!-- SUMMARY CARDS -->
+
+        <div
+            id="summaryCards"
+            class="summary-grid"
+        ></div>
+
+
+
+        <!-- COMPLIANCE -->
+
+        <section class="report-card">
+
+            <div class="report-card-header">
+
+                <div>
+
+                    <div class="report-icon">
+                        ✓
+                    </div>
+
+                    <div>
+
+                        <h3>
+                            Compliance Checks
+                        </h3>
+
+                        <p>
+                            Mandatory declaration
+                            verification
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="complianceResults"
+                class="compliance-list"
+            ></div>
+
+        </section>
+
+
+
+        <!-- PRODUCT DATA -->
+
+        <section class="report-card">
+
+            <div class="report-card-header">
+
+                <div>
+
+                    <div class="report-icon">
+                        ◎
+                    </div>
+
+                    <div>
+
+                        <h3>
+                            Extracted Product Information
+                        </h3>
+
+                        <p>
+                            Information identified from
+                            the product packaging
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="productInformation"
+                class="product-information"
+            ></div>
+
+        </section>
+
+
+        <!-- DISCLAIMER -->
+
+        <div class="analysis-note">
+
+            <strong>
+                Automated assessment
+            </strong>
+
+            <span>
+                Fields marked “Cannot Determine” require
+                manual verification or a clearer product
+                image and are not automatically treated
+                as legal violations.
+            </span>
+
+        </div>
+
+
+    </section>
+
+
+</main>
+
+
+
+<footer>
+
+    <div>
+        PackCheck · SIH26034 Prototype
+    </div>
+
+    <div>
+        Legal Metrology Compliance Analysis
+    </div>
+
+</footer>
+
+
+<script src="/static/script.js"></script>
+
+</body>
+
+</html>
