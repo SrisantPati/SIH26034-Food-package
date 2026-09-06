@@ -2,7 +2,7 @@
 // ELEMENTS
 // ==========================================
 
-const barcodeSection =
+codeSection =
     document.getElementById("barcodeSection");
 
 const crossCheckSection =
@@ -29,10 +29,8 @@ const dropZone =
 const imagePreview =
     document.getElementById("imagePreview");
 
-const resultProductImage =
-    document.getElementById(
-        "resultProductImage"
-    );
+const resuconstbarltProductImage = 
+    document.getElementById("resultProductImage");
 
 const previewContainer =
     document.getElementById(
@@ -727,72 +725,43 @@ function stopTimer() {
 
 function renderResults(data) {
 
-    console.log("DATA RECEIVED BY renderResults:", data);
-
     if (!data) {
-        console.error("renderResults received null data");
         return;
     }
 
-    const product = data?.product || {};
+    const compliance =
+        data.compliance || {};
 
-    console.log("FULL ANALYZE RESPONSE:", data);
+    const summary =
+        compliance.summary || {};
 
-    if (!data || typeof data !== "object") {
-        console.error("Invalid response:", data);
-        throw new Error("Backend returned an invalid response.");
-    }
-
-
-    const compliance = data?.compliance || {
-        checks: [],
-        summary: {
-            total_checks: 0,
-            compliant: 0,
-            non_compliant: 0,
-            review_required: 0,
-            cannot_determine: 0,
-            not_applicable: 0
-        }
-    };
-
-    const barcode = data?.barcode || {
-        value: null,
-        format: null,
-        status: "NOT_DETECTED"
-    };
-
-    const crossCheck = data?.cross_check || {
-        status: "DATABASE_UNAVAILABLE"
-    };
-
+    const checks =
+        compliance.checks || [];
 
     renderOverallStatus(
-        compliance
+        summary
     );
 
     renderSummary(
-        compliance
+        summary
     );
 
     renderCompliance(
-        compliance
-    );
-
-    renderProductInformation(
-        product
+        checks
     );
 
     renderBarcode(
-        barcode
+        data.barcode || null
     );
 
     renderCrossCheck(
-        crossCheck
+        data.cross_check || null
+    );
+
+    renderProductInformation(
+        data.product || {}
     );
 }
-
-
 // ==========================================
 // OVERALL STATUS
 // ==========================================
