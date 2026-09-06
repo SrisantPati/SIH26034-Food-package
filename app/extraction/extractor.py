@@ -1461,6 +1461,94 @@ def extract_nutrition(ocr_results):
 
     return nutrition
 
+def extract_allergens(ocr_results):
+
+    allergen_lines = []
+
+    patterns = [
+        r"\bALLERGEN(?:S)?\b",
+        r"\bALLERGEN\s+ADVICE\b",
+        r"\bCONTAINS?\b",
+        r"\bMAY\s+CONTAIN\b",
+    ]
+
+    for item in ocr_results:
+
+        text = clean_spaces(
+            item.get("text", "")
+        )
+
+        if not text:
+            continue
+
+        if any(
+            re.search(
+                pattern,
+                text,
+                re.IGNORECASE
+            )
+            for pattern in patterns
+        ):
+
+            # Avoid obvious nutrition-table text
+            if re.search(
+                r"\bPROTEIN\b|\bCARBOHYDRATE\b|\bTOTAL\s+FAT\b",
+                text,
+                re.IGNORECASE
+            ):
+                continue
+
+            allergen_lines.append(
+                {
+                    "text": text,
+                    "confidence": item.get(
+                        "confidence",
+                        0
+                    )
+                }
+            )
+
+    if not allergen_lines:
+        return make_field()
+
+    # Remove duplicates
+    unique_lines = []
+
+    seen = set()
+
+    for item in allergen_lines:
+
+        normalized = item[
+            "text"
+        ].lower().strip()
+
+        if normalized in seen:
+            continue
+
+        seen.add(
+            normalized
+        )
+
+        unique_lines.append(
+            item
+        )
+
+    value = " | ".join(
+        item["text"]
+        for item in unique_lines[:4]
+    )
+
+    confidence = sum(
+        item["confidence"]
+        for item in unique_lines
+    ) / len(unique_lines)
+
+    return make_field(
+        value,
+        confidence
+    )
+
+
 
 # ================================================================
 # MAIN EXTRACTOR
@@ -1565,7 +1653,11 @@ def extract_fields(ocr_results):
     "nutrition":
         extract_nutrition(
             ocr_results
-        )
+        ),
+    "allergens": 
+       extract_allergens(
+          ocr_results
+         )   
     }
 
 

@@ -2,6 +2,12 @@
 // ELEMENTS
 // ==========================================
 
+const barcodeSection =
+    document.getElementById("barcodeSection");
+
+const crossCheckSection =
+    document.getElementById("crossCheckSection");
+
 const progressBar =
     document.getElementById(
         "progressBar"
@@ -80,6 +86,201 @@ let previewURL = null;
 
 
 let timerInterval = null;
+
+
+function renderBarcode(data) {
+
+    if (!data) return;
+
+    const detected =
+        data.status === "DETECTED";
+
+    barcodeSection.innerHTML = `
+        <div class="info-section">
+            <div class="section-header">
+                <h3>Barcode Detection</h3>
+            </div>
+
+            <div class="info-grid">
+
+                <div class="field-card">
+                    <span class="field-label">
+                        Barcode
+                    </span>
+
+                    <strong>
+                        ${
+                            detected
+                                ? data.value
+                                : "Not detected"
+                        }
+                    </strong>
+                </div>
+
+                <div class="field-card">
+                    <span class="field-label">
+                        Format
+                    </span>
+
+                    <strong>
+                        ${data.format || "—"}
+                    </strong>
+                </div>
+
+                <div class="field-card">
+                    <span class="field-label">
+                        Detection Status
+                    </span>
+
+                    <strong>
+                        ${data.status}
+                    </strong>
+                </div>
+
+            </div>
+        </div>
+    `;
+}
+
+
+function renderCrossCheck(crossCheck) {
+
+    if (!crossCheck) return;
+
+    if (
+        crossCheck.status ===
+        "DATABASE_UNAVAILABLE"
+    ) {
+        crossCheckSection.innerHTML = `
+            <div class="info-section">
+                <div class="section-header">
+                    <h3>Barcode Cross-Check</h3>
+                </div>
+
+                <p class="missing-text">
+                    Product database information
+                    was not available for comparison.
+                </p>
+            </div>
+        `;
+
+        return;
+    }
+
+
+    const fields = [
+        ["Brand", crossCheck.brand],
+        ["Food Name", crossCheck.food_name],
+        [
+            "Net Quantity",
+            crossCheck.net_quantity
+        ]
+    ];
+
+
+    const rows = fields
+        .map(([name, field]) => {
+
+            if (!field) return "";
+
+            const status =
+                field.status || "NOT_AVAILABLE";
+
+            return `
+                <div class="cross-check-row">
+
+                    <div class="cross-title">
+                        ${name}
+                    </div>
+
+                    <div class="cross-values">
+
+                        <div>
+                            <span>OCR</span>
+                            <strong>
+                                ${field.ocr || "Not detected"}
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>Barcode Database</span>
+                            <strong>
+                                ${
+                                    field.database ||
+                                    "Not available"
+                                }
+                            </strong>
+                        </div>
+
+                    </div>
+
+                    <span class="
+                        cross-status
+                        ${getCrossStatusClass(status)}
+                    ">
+                        ${formatCrossStatus(status)}
+                    </span>
+
+                </div>
+            `;
+
+        })
+        .join("");
+
+
+    crossCheckSection.innerHTML = `
+        <div class="info-section">
+
+            <div class="section-header">
+                <h3>
+                    OCR ↔ Barcode Cross-Check
+                </h3>
+
+                <span class="reference-badge">
+                    Reference Only
+                </span>
+            </div>
+
+            ${rows}
+
+            <p class="cross-note">
+                Barcode database information is used
+                only for product identification and
+                cross-checking. Compliance is based on
+                declarations visible on the package.
+            </p>
+
+        </div>
+    `;
+}
+
+function getCrossStatusClass(status) {
+
+    if (status === "MATCH")
+        return "cross-match";
+
+    if (
+        status === "PARTIAL_MATCH"
+    )
+        return "cross-partial";
+
+    if (status === "MISMATCH")
+        return "cross-mismatch";
+
+    return "cross-neutral";
+}
+
+
+function formatCrossStatus(status) {
+
+    return status
+        .replaceAll("_", " ")
+        .toLowerCase()
+        .replace(
+            /\b\w/g,
+            char => char.toUpperCase()
+        );
+}
 
 function startProgress() {
 
@@ -526,26 +727,68 @@ function stopTimer() {
 
 function renderResults(data) {
 
-    const product =
-        data.product || {};
+    console.log("DATA RECEIVED BY renderResults:", data);
 
-    const compliance =
-        data.compliance || {};
+    if (!data) {
+        console.error("renderResults received null data");
+        return;
+    }
+
+    const product = data?.product || {};
+
+    console.log("FULL ANALYZE RESPONSE:", data);
+
+    if (!data || typeof data !== "object") {
+        console.error("Invalid response:", data);
+        throw new Error("Backend returned an invalid response.");
+    }
+
+
+    const compliance = data?.compliance || {
+        checks: [],
+        summary: {
+            total_checks: 0,
+            compliant: 0,
+            non_compliant: 0,
+            review_required: 0,
+            cannot_determine: 0,
+            not_applicable: 0
+        }
+    };
+
+    const barcode = data?.barcode || {
+        value: null,
+        format: null,
+        status: "NOT_DETECTED"
+    };
+
+    const crossCheck = data?.cross_check || {
+        status: "DATABASE_UNAVAILABLE"
+    };
+
 
     renderOverallStatus(
-        compliance.summary || {}
+        compliance
     );
 
     renderSummary(
-        compliance.summary || {}
+        compliance
     );
 
     renderCompliance(
-        compliance.checks || []
+        compliance
     );
 
     renderProductInformation(
         product
+    );
+
+    renderBarcode(
+        barcode
+    );
+
+    renderCrossCheck(
+        crossCheck
     );
 }
 
