@@ -2435,3 +2435,373 @@ footer {
     font-size: 12px;
     color: var(--muted);
 }
+
+.history-button {
+    padding: 9px 15px;
+    border: 1px solid #dbe3ef;
+    background: #ffffff;
+    color: #1e293b;
+    border-radius: 9px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.history-button:hover {
+    background: #f8fafc;
+    transform: translateY(-1px);
+}
+
+
+.history-section {
+    width: 100%;
+    max-width: 1000px;
+    margin: 30px auto 50px;
+    padding: 25px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    box-shadow: 0 8px 30px rgba(15, 23, 42, 0.05);
+}
+
+
+.history-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 22px;
+}
+
+
+.history-header h2 {
+    margin: 5px 0 5px;
+}
+
+
+.history-header p {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+
+.history-close-button {
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    border-radius: 9px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+
+.history-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 13px;
+    padding: 17px 18px;
+    transition: 0.2s ease;
+}
+
+
+.history-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 5px 18px rgba(15, 23, 42, 0.05);
+}
+
+
+.history-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+
+.history-id {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    margin-bottom: 5px;
+}
+
+
+.history-product h3 {
+    margin: 0 0 8px;
+    font-size: 16px;
+}
+
+
+.history-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+
+.history-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+
+.history-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 99px;
+    font-size: 10px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+
+.history-compliant {
+    background: #dcfce7;
+    color: #166534;
+}
+
+
+.history-review {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+
+.history-non-compliant {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+
+.history-report-button {
+    text-decoration: none;
+    padding: 8px 12px;
+    background: #2563eb;
+    color: #ffffff;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+
+.history-report-button:hover {
+    background: #1d4ed8;
+}
+
+
+.history-message {
+    padding: 25px;
+    text-align: center;
+    color: #64748b;
+}
+
+
+.history-error {
+    padding: 20px;
+    border-radius: 10px;
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+
+@media (max-width: 700px) {
+
+    .history-main {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .history-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .history-header {
+        flex-direction: column;
+    }
+}
+
+
+/* ==========================================
+   GLOBAL READABILITY IMPROVEMENTS
+   ========================================== */
+
+body {
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+
+/* Main headings */
+
+h1 {
+    font-size: 42px;
+    line-height: 1.15;
+}
+
+h2 {
+    font-size: 28px;
+    line-height: 1.25;
+}
+
+h3 {
+    font-size: 20px;
+    line-height: 1.3;
+}
+
+
+/* Normal text */
+
+p {
+    font-size: 15px;
+}
+
+
+/* Navbar */
+
+.navbar,
+.navbar * {
+    font-size: 14px;
+}
+
+
+/* Small labels */
+
+.eyebrow,
+.field-label,
+.summary-label,
+.history-id,
+.cross-values span {
+    font-size: 13px;
+}
+
+
+/* Product values */
+
+.field-card strong {
+    font-size: 16px;
+}
+
+
+/* Summary cards */
+
+.summary-number {
+    font-size: 27px;
+}
+
+.summary-label {
+    font-size: 13px;
+}
+
+
+/* Compliance rows */
+
+.compliance-row {
+    font-size: 14px;
+}
+
+.compliance-row strong {
+    font-size: 15px;
+}
+
+
+/* Status badges */
+
+.status-badge,
+.cross-status,
+.history-status,
+.reference-badge {
+    font-size: 12px;
+}
+
+
+/* Buttons */
+
+button,
+.primary-button,
+.secondary-button,
+.history-button,
+.history-report-button {
+    font-size: 14px;
+}
+
+
+/* Upload area */
+
+.upload-zone h3 {
+    font-size: 19px;
+}
+
+.upload-zone p {
+    font-size: 14px;
+}
+
+
+/* Loading screen */
+
+#loadingTitle {
+    font-size: 21px;
+}
+
+#loadingMessage {
+    font-size: 14px;
+}
+
+.analysis-step {
+    font-size: 13px;
+}
+
+
+/* Barcode */
+
+.cross-title {
+    font-size: 16px;
+}
+
+.cross-values strong {
+    font-size: 15px;
+}
+
+
+/* History */
+
+.history-product h3 {
+    font-size: 18px;
+}
+
+.history-meta {
+    font-size: 13px;
+}
+
+
+/* Mobile */
+
+@media (max-width: 700px) {
+
+    body {
+        font-size: 15px;
+    }
+
+    h1 {
+        font-size: 32px;
+    }
+
+    h2 {
+        font-size: 24px;
+    }
+
+    h3 {
+        font-size: 18px;
+    }
+}

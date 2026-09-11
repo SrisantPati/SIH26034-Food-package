@@ -5,6 +5,36 @@
 codeSection =
     document.getElementById("barcodeSection");
 
+const historyButton =
+    document.getElementById(
+        "historyButton"
+    );
+
+const historySection =
+    document.getElementById(
+        "historySection"
+    );
+
+const historyList =
+    document.getElementById(
+        "historyList"
+    );
+
+const historyLoading =
+    document.getElementById(
+        "historyLoading"
+    );
+
+const historyEmpty =
+    document.getElementById(
+        "historyEmpty"
+    );
+
+const closeHistoryButton =
+    document.getElementById(
+        "closeHistoryButton"
+    );
+
 const crossCheckSection =
     document.getElementById("crossCheckSection");
 
@@ -85,7 +115,310 @@ let previewURL = null;
 
 let timerInterval = null;
 
+async function loadHistory() {
 
+    if (!historySection) {
+        return;
+    }
+
+    historySection.classList.remove(
+        "hidden"
+    );
+
+    historySection.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+    });
+
+
+    if (historyLoading) {
+        historyLoading.classList.remove(
+            "hidden"
+        );
+    }
+
+    if (historyEmpty) {
+        historyEmpty.classList.add(
+            "hidden"
+        );
+    }
+
+    if (historyList) {
+        historyList.innerHTML = "";
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                "/history"
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "Could not load scan history."
+            );
+        }
+
+
+        const data =
+            await response.json();
+
+
+        const scans =
+            data.scans || [];
+
+
+        renderHistory(
+            scans
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "History error:",
+            error
+        );
+
+
+        if (historyList) {
+
+            historyList.innerHTML = `
+                <div class="history-error">
+                    Unable to load scan history.
+                </div>
+            `;
+        }
+
+    }
+
+    finally {
+
+        if (historyLoading) {
+
+            historyLoading.classList.add(
+                "hidden"
+            );
+        }
+    }
+}
+
+function renderHistory(scans) {
+
+    if (!historyList) {
+        return;
+    }
+
+
+    historyList.innerHTML = "";
+
+
+    if (!scans.length) {
+
+        if (historyEmpty) {
+
+            historyEmpty.classList.remove(
+                "hidden"
+            );
+        }
+
+        return;
+    }
+
+
+    if (historyEmpty) {
+
+        historyEmpty.classList.add(
+            "hidden"
+        );
+    }
+
+
+    scans.forEach(
+        scan => {
+
+            const card =
+                document.createElement(
+                    "div"
+                );
+
+
+            card.className =
+                "history-card";
+
+
+            const status =
+                scan.overall_status ||
+                "REVIEW_REQUIRED";
+
+
+            const statusClass =
+                getHistoryStatusClass(
+                    status
+                );
+
+
+            const createdAt =
+                formatHistoryDate(
+                    scan.created_at
+                );
+
+
+            const productName =
+                scan.product_name ||
+                "Unknown Product";
+
+
+            const barcode =
+                scan.barcode ||
+                "Not detected";
+
+
+            card.innerHTML = `
+
+                <div class="history-main">
+
+                    <div class="history-product">
+
+                        <div class="history-id">
+                            Scan #${scan.id}
+                        </div>
+
+                        <h3>
+                            ${escapeHtml(productName)}
+                        </h3>
+
+                        <div class="history-meta">
+
+                            <span>
+                                Barcode:
+                                <strong>
+                                    ${escapeHtml(barcode)}
+                                </strong>
+                            </span>
+
+                            <span>
+                                ${createdAt}
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="history-actions">
+
+                        <span
+                            class="
+                                history-status
+                                ${statusClass}
+                            "
+                        >
+                            ${formatHistoryStatus(status)}
+                        </span>
+
+
+                        <a
+                            class="history-report-button"
+                            href="/report/${scan.id}"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            PDF Report
+                        </a>
+
+                    </div>
+
+                </div>
+            `;
+
+
+            historyList.appendChild(
+                card
+            );
+        }
+    );
+}
+
+function formatHistoryStatus(status) {
+
+    return String(status)
+        .replaceAll(
+            "_",
+            " "
+        )
+        .toLowerCase()
+        .replace(
+            /\b\w/g,
+            character =>
+                character.toUpperCase()
+        );
+}
+
+
+function getHistoryStatusClass(status) {
+
+    if (
+        status === "COMPLIANT"
+    ) {
+        return "history-compliant";
+    }
+
+
+    if (
+        status === "NON_COMPLIANT"
+    ) {
+        return "history-non-compliant";
+    }
+
+
+    return "history-review";
+}
+
+
+function formatHistoryDate(value) {
+
+    if (!value) {
+        return "Date unavailable";
+    }
+
+
+    const date =
+        new Date(value);
+
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+        return value;
+    }
+
+
+    return date.toLocaleString();
+}
+
+
+function escapeHtml(value) {
+
+    const element =
+        document.createElement(
+            "div"
+        );
+
+
+    element.textContent =
+        value ?? "";
+
+
+    return element.innerHTML;
+}
 function renderBarcode(data) {
 
     if (!data) return;
@@ -1847,6 +2180,21 @@ function capitalize(text) {
     );
 }
 
+historyButton?.addEventListener(
+    "click",
+    loadHistory
+);
+
+
+closeHistoryButton?.addEventListener(
+    "click",
+    () => {
+
+        historySection?.classList.add(
+            "hidden"
+        );
+    }
+);
 
 // ==========================================
 // NEW SCAN

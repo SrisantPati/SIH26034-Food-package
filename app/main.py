@@ -144,6 +144,20 @@ async def analyze_product(
     cross_check=cross_check,
     compliance=compliance
     )
+        # ----------------------------
+    # FINAL RESPONSE
+    # ----------------------------
+
+    return {
+        "success": True,
+        "scan_id": scan_id,
+        "report_url": f"/report/{scan_id}",
+        "product": product,
+        "barcode": barcode,
+        "barcode_product": barcode_product,
+        "cross_check": cross_check,
+        "compliance": compliance
+    }
 
 @app.get("/history")
 async def history():
@@ -157,21 +171,7 @@ async def history():
     # FINAL RESPONSE
     # ----------------------------
 
-    return {
-        "success": True,
-
-        "scan_id": scan_id,
-
-        "product": product,
-
-        "barcode": barcode,
-
-        "barcode_product": barcode_product,
-
-        "cross_check": cross_check,
-
-        "compliance": compliance
-    }
+    
 
 @app.get("/report/{scan_id}")
 async def download_report(

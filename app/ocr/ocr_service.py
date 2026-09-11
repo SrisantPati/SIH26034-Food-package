@@ -670,6 +670,7 @@ def run_targeted_declaration_ocr(
     "app/uploads/declaration_crop_debug.jpg",
     enhanced_crop
     )
+    
 
     print(
         "Targeted OCR: declaration panel..."
@@ -686,7 +687,7 @@ def run_targeted_declaration_ocr(
     print(
         f"Targeted OCR: {len(results)} detections"
     )
-
+    
     return results
 
 # ================================================================
@@ -718,10 +719,11 @@ def extract_text(image_path: str):
     # TARGETED OCR FOR SMALL DECLARATION VALUES
     # ------------------------------------------------
 
-    targeted_results = run_targeted_declaration_ocr(
+    """targeted_results = run_targeted_declaration_ocr(
         image,
         original_results
-    )
+    )"""
+    targeted_results = []
 
     # Combine full-image + targeted detections
     all_results = (

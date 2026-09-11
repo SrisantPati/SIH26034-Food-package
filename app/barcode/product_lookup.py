@@ -69,7 +69,7 @@ def lookup_product(barcode):
                 "cc": "in",
             },
             headers=headers,
-            timeout=8
+            timeout=3
         )
 
     except requests.RequestException as error:

@@ -434,7 +434,7 @@ def check_responsible_business(product):
 
     result = check_required_field(
         manufacturer,
-        "Manufacturer / Responsible Business"
+        "Manufacturer "
     )
 
     if result["status"] in [

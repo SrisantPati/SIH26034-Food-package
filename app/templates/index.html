@@ -440,18 +440,24 @@
                     declarations detected from the image.
                 </p>
 
-            </div>
+           <div class="result-actions">
 
+    <button
+        id="historyButton"
+        class="history-button"
+        type="button"
+    >
+        Scan History
+    </button>
 
-            <button
-                id="newScanButton"
-                class="secondary-button"
-            >
-                + New Scan
-            </button>
+    <button
+        id="newScanButton"
+        type="button"
+    >
+        + New Scan
+    </button>
 
-        </div>
-
+</div>
 
 
         <!-- OVERALL RESULT -->
@@ -616,7 +622,61 @@
 
 </main>
 
+<section
+    id="historySection"
+    class="history-section hidden"
+>
 
+    <div class="history-header">
+
+        <div>
+            <span class="eyebrow">
+                INSPECTION RECORDS
+            </span>
+
+            <h2>
+                Scan History
+            </h2>
+
+            <p>
+                Previous product compliance analyses
+                stored in PackCheck.
+            </p>
+        </div>
+
+        <button
+            id="closeHistoryButton"
+            class="history-close-button"
+            type="button"
+        >
+            Close
+        </button>
+
+    </div>
+
+
+    <div
+        id="historyLoading"
+        class="history-message hidden"
+    >
+        Loading scan history...
+    </div>
+
+
+    <div
+        id="historyEmpty"
+        class="history-message hidden"
+    >
+        No scans have been saved yet.
+    </div>
+
+
+    <div
+        id="historyList"
+        class="history-list"
+    ></div>
+
+</section>
 
 <footer>
 
